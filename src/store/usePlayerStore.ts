@@ -32,10 +32,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         const audio = getAudioInstance();
         if (!audio) return;
 
-        // stop previous
         audio.pause();
 
-        console.log("[PlayerStore] Init with URL:", mixUrl);
         if (!mixUrl) {
             console.error("[PlayerStore] No mixUrl provided!");
             return;
@@ -45,14 +43,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         audio.volume = volume;
         audio.loop = true;
 
-        // Event listeners
         audio.onplay = () => set({ isPlaying: true });
         audio.onpause = () => set({ isPlaying: false });
         audio.ontimeupdate = () => {
             set({ progress: Math.floor(audio.currentTime) });
         };
 
-        // Seek once loaded
         const onLoaded = () => {
             if (startPosition > 0) {
                 audio.currentTime = startPosition;
@@ -66,19 +62,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     togglePlay: () => {
         const audio = getAudioInstance();
-        console.log("[PlayerStore] Toggle Play. Audio:", !!audio, "Src:", audio?.src);
+        if (!audio) return;
 
         const { mixUrl, progress } = get();
 
-        // 1. Check if we have a valid mix URL in store
         if (!mixUrl) {
             console.error("[PlayerStore] Cannot play: No mix URL loaded");
             return;
         }
 
-        // 2. Auto-recover: if audio.src is empty/invalid but we have a mixUrl, load it
         if (!audio.src || audio.src === window.location.href) {
-            console.log("[PlayerStore] Audio source missing, auto-loading from state:", mixUrl);
             audio.src = mixUrl;
             audio.currentTime = progress;
             audio.loop = true;
@@ -117,7 +110,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         const audio = getAudioInstance();
         if (audio) {
             audio.pause();
-            audio.removeAttribute('src'); // Safer than empty string
+            audio.removeAttribute('src');
             set({ isPlaying: false, progress: 0 });
         }
     }
