@@ -1,44 +1,60 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Player from "@/components/Player/Player";
-import { redirect } from "next/navigation";
 import styles from "./Dashboard.module.css";
 import SignOutButton from "@/components/Auth/SignOutButton";
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export default function DashboardPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const [store, setStore] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-export default async function DashboardPage() {
-    const session = await getServerSession(authOptions);
+    useEffect(() => {
+        if (status === "loading") return;
 
-    if (!session || (session.user as any).role !== "STORE") {
-        redirect("/login");
+        if (!session || (session.user as any).role !== "STORE") {
+            router.replace("/login");
+            return;
+        }
+
+        // Fetch store data
+        fetch("/api/stores/me")
+            .then(res => res.json())
+            .then(async (storeData) => {
+                // Fetch position for current style
+                let currentPosition = 0;
+                if (storeData.currentStyleId) {
+                    try {
+                        const posRes = await fetch(`/api/store/position?styleId=${storeData.currentStyleId}`);
+                        const posData = await posRes.json();
+                        currentPosition = posData.position || 0;
+                    } catch (e) {}
+                }
+                setStore({ ...storeData, currentPosition });
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [session, status, router]);
+
+    if (status === "loading" || loading) {
+        return (
+            <div style={{ 
+                display: "flex", 
+                justifyContent: "center", 
+                alignItems: "center", 
+                height: "100vh",
+                background: "var(--background)"
+            }}>
+                <p style={{ color: "var(--muted-foreground)" }}>Chargement...</p>
+            </div>
+        );
     }
 
-    const storeId = (session.user as any).id;
-    const store = await prisma.store.findUnique({
-        where: { id: storeId },
-        include: { style: true },
-    });
-
-    if (!store) {
-        redirect("/login");
-    }
-
-    // Fetch progress for the initial current style
-    let currentPosition = 0;
-    if (store.currentStyleId) {
-        const progress = await prisma.storeStyleProgress.findUnique({
-            where: {
-                storeId_styleId: {
-                    storeId: storeId,
-                    styleId: store.currentStyleId,
-                },
-            },
-        });
-        currentPosition = progress?.lastPosition || 0;
-    }
+    if (!store) return null;
 
     return (
         <div className={styles.layout}>
@@ -52,8 +68,7 @@ export default async function DashboardPage() {
                 </div>
             </header>
             <main>
-                {/* Pass the initial position for the current style */}
-                <Player store={{ ...store, currentPosition }} />
+                <Player store={store} />
             </main>
         </div>
     );

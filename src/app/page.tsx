@@ -1,20 +1,36 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default async function HomePage() {
-  const session = await getServerSession(authOptions);
+export default function HomePage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
 
-  if (session) {
-    if ((session.user as any).role === "ADMIN") {
-      redirect("/admin/dashboard");
-    } else {
-      redirect("/dashboard");
-    }
-  } else {
-    redirect("/login");
-  }
+    useEffect(() => {
+        if (status === "loading") return;
+
+        if (session) {
+            if ((session.user as any).role === "ADMIN") {
+                router.replace("/admin/dashboard");
+            } else {
+                router.replace("/dashboard");
+            }
+        } else {
+            router.replace("/login");
+        }
+    }, [session, status, router]);
+
+    return (
+        <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            height: "100vh",
+            background: "var(--background)"
+        }}>
+            <p style={{ color: "var(--muted-foreground)" }}>Chargement...</p>
+        </div>
+    );
 }

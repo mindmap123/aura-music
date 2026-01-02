@@ -1,28 +1,27 @@
-import prisma from "@/lib/prisma";
+"use client";
+
+import { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
 import { Store, Music, ListMusic, TrendingUp } from "lucide-react";
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-async function getStats() {
-    try {
-        const [stores, stylesCount, stylesWithMix, sessions] = await Promise.all([
-            prisma.store.count(),
-            prisma.musicStyle.count(),
-            prisma.musicStyle.count({ where: { NOT: { mixUrl: null } } }),
-            prisma.playSession.count(),
-        ]);
-
-        return { stores, stylesCount, stylesWithMix, sessions };
-    } catch (error) {
-        console.error("Failed to fetch stats:", error);
-        return { stores: 0, stylesCount: 0, stylesWithMix: 0, sessions: 0 };
-    }
+interface Stats {
+    stores: number;
+    stylesCount: number;
+    stylesWithMix: number;
+    sessions: number;
 }
 
-export default async function AdminDashboard() {
-    const stats = await getStats();
+export default function AdminDashboard() {
+    const [stats, setStats] = useState<Stats>({ stores: 0, stylesCount: 0, stylesWithMix: 0, sessions: 0 });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/admin/stats")
+            .then(res => res.json())
+            .then(data => setStats(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
 
     const cards = [
         { name: "Magasins actifs", value: stats.stores, icon: Store, color: "#3b82f6" },
@@ -43,7 +42,7 @@ export default async function AdminDashboard() {
                         </div>
                         <div className={styles.cardInfo}>
                             <span className={styles.cardLabel}>{card.name}</span>
-                            <span className={styles.cardValue}>{card.value}</span>
+                            <span className={styles.cardValue}>{loading ? "..." : card.value}</span>
                         </div>
                     </div>
                 ))}

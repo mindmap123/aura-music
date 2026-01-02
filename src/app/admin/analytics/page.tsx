@@ -1,48 +1,31 @@
-import prisma from "@/lib/prisma";
+"use client";
+
+import { useState, useEffect } from "react";
 import styles from "./Analytics.module.css";
 import { Clock, Store, Music, Trophy } from "lucide-react";
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-async function getAnalytics() {
-    try {
-        const stores = await prisma.store.findMany({
-            include: {
-                playSessions: {
-                    include: { style: true }
-                }
-            }
-        });
-
-        const statsPerStore = stores.map(store => {
-            const totalSeconds = store.playSessions.reduce((acc, sess) => acc + sess.totalPlayed, 0);
-            const styleStats: Record<string, number> = {};
-
-            store.playSessions.forEach(sess => {
-                const name = sess.style.name;
-                styleStats[name] = (styleStats[name] || 0) + sess.totalPlayed;
-            });
-
-            const favoriteStyle = Object.entries(styleStats).sort((a, b) => b[1] - a[1])[0]?.[0] || "Aucun";
-
-            return {
-                name: store.name,
-                totalHours: (totalSeconds / 3600).toFixed(1),
-                favoriteStyle,
-                sessionsCount: store.playSessions.length
-            };
-        });
-
-        return statsPerStore;
-    } catch (error) {
-        console.error("Failed to fetch analytics:", error);
-        return [];
-    }
+interface StoreStat {
+    name: string;
+    totalHours: string;
+    favoriteStyle: string;
+    sessionsCount: number;
 }
 
-export default async function AnalyticsPage() {
-    const stats = await getAnalytics();
+export default function AnalyticsPage() {
+    const [stats, setStats] = useState<StoreStat[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/admin/analytics")
+            .then(res => res.json())
+            .then(data => setStats(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) {
+        return <div className={styles.container}><p>Chargement...</p></div>;
+    }
 
     return (
         <div className={styles.container}>
@@ -52,7 +35,9 @@ export default async function AnalyticsPage() {
             </header>
 
             <div className={styles.grid}>
-                {stats.map((store) => (
+                {stats.length === 0 ? (
+                    <p>Aucune donnée disponible.</p>
+                ) : stats.map((store) => (
                     <div key={store.name} className={styles.card}>
                         <div className={styles.storeHeader}>
                             <Store size={20} className={styles.icon} />
