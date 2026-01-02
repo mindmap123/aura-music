@@ -3,16 +3,22 @@ import styles from "./Dashboard.module.css";
 import { Store, Music, ListMusic, TrendingUp } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 async function getStats() {
-    const [stores, stylesCount, stylesWithMix, sessions] = await Promise.all([
-        prisma.store.count(),
-        prisma.musicStyle.count(),
-        prisma.musicStyle.count({ where: { NOT: { mixUrl: null } } }),
-        prisma.playSession.count(),
-    ]);
+    try {
+        const [stores, stylesCount, stylesWithMix, sessions] = await Promise.all([
+            prisma.store.count(),
+            prisma.musicStyle.count(),
+            prisma.musicStyle.count({ where: { NOT: { mixUrl: null } } }),
+            prisma.playSession.count(),
+        ]);
 
-    return { stores, stylesCount, stylesWithMix, sessions };
+        return { stores, stylesCount, stylesWithMix, sessions };
+    } catch (error) {
+        console.error("Failed to fetch stats:", error);
+        return { stores: 0, stylesCount: 0, stylesWithMix: 0, sessions: 0 };
+    }
 }
 
 export default async function AdminDashboard() {

@@ -7,6 +7,7 @@ import styles from "./Dashboard.module.css";
 import SignOutButton from "@/components/Auth/SignOutButton";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
