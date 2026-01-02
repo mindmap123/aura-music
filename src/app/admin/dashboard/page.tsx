@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import styles from "./Dashboard.module.css";
 import { Store, Music, ListMusic, TrendingUp } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 async function getStats() {
     const [stores, stylesCount, stylesWithMix, sessions] = await Promise.all([
         prisma.store.count(),

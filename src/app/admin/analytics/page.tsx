@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import styles from "./Analytics.module.css";
 import { Clock, Store, Music, Trophy } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 async function getAnalytics() {
     const stores = await prisma.store.findMany({
         include: {

@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import styles from "./Dashboard.module.css";
 import SignOutButton from "@/components/Auth/SignOutButton";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 
